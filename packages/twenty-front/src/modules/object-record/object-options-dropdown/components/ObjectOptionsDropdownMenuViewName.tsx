@@ -10,7 +10,9 @@ import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSe
 import { type View } from '@/views/types/View';
 import { useUpdateViewFromCurrentState } from '@/views/view-picker/hooks/useUpdateViewFromCurrentState';
 import { viewPickerIsDirtyComponentState } from '@/views/view-picker/states/viewPickerIsDirtyComponentState';
+import { viewPickerInputNameComponentState } from '@/views/view-picker/states/viewPickerInputNameComponentState';
 import { viewPickerIsPersistingComponentState } from '@/views/view-picker/states/viewPickerIsPersistingComponentState';
+import { viewPickerReferenceViewIdComponentState } from '@/views/view-picker/states/viewPickerReferenceViewIdComponentState';
 import { viewPickerSelectedIconComponentState } from '@/views/view-picker/states/viewPickerSelectedIconComponentState';
 import { styled } from '@linaria/react';
 import { useEffect, useRef, useState } from 'react';
@@ -76,6 +78,12 @@ export const ObjectOptionsDropdownMenuViewName = ({
 
   const { updateViewFromCurrentState } = useUpdateViewFromCurrentState();
   const [viewName, setViewName] = useState(currentView?.name);
+  const setViewPickerInputName = useSetAtomComponentState(
+    viewPickerInputNameComponentState,
+  );
+  const setViewPickerReferenceViewId = useSetAtomComponentState(
+    viewPickerReferenceViewIdComponentState,
+  );
 
   const inputRef = useRef<HTMLInputElement>(null);
   const { dropdownId } = useObjectOptionsDropdown();
@@ -87,10 +95,21 @@ export const ObjectOptionsDropdownMenuViewName = ({
         return;
       }
 
+      // Enter must persist the view being edited, not whichever view the view picker last referenced
+      setViewPickerReferenceViewId(currentView.id);
+      setViewPickerInputName(viewName);
+
       await updateViewFromCurrentState();
     },
     focusId: dropdownId,
-    dependencies: [viewPickerIsPersisting, updateViewFromCurrentState],
+    dependencies: [
+      viewPickerIsPersisting,
+      updateViewFromCurrentState,
+      currentView.id,
+      viewName,
+      setViewPickerReferenceViewId,
+      setViewPickerInputName,
+    ],
   });
 
   const handleIconChange = ({ iconKey }: { iconKey: string }) => {
